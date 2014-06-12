@@ -496,11 +496,11 @@ class ModelChoiceList extends ObjectChoiceList
      */
     private function isEqual($choice, $givenChoice)
     {
-        if ($choice === $givenChoice) {
+        if ($choice == $givenChoice) {
             return true;
         }
 
-        if ($this->getIdentifierValues($choice) === $this->getIdentifierValues($givenChoice)) {
+        if ($this->getIdentifierValues($choice) == $this->getIdentifierValues($givenChoice)) {
             return true;
         }
 
