@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerAware;
 
 class SessionController extends ContainerAware
 {
-    public function welcomeAction(Request $request, $name=null)
+    public function welcomeAction(Request $request, $name = null)
     {
         $session = $request->getSession();
 
@@ -42,7 +42,7 @@ class SessionController extends ContainerAware
 
     public function logoutAction(Request $request)
     {
-        $request->getSession('session')->invalidate();
+        $request->getSession()->invalidate();
 
         return new Response('Session cleared.');
     }

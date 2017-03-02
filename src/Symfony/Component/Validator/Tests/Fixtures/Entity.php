@@ -19,7 +19,7 @@ use Symfony\Component\Validator\ExecutionContextInterface;
  * @Assert\GroupSequence({"Foo", "Entity"})
  * @Assert\Callback({"Symfony\Component\Validator\Tests\Fixtures\CallbackClass", "callback"})
  */
-class Entity extends EntityParent implements EntityInterface
+class Entity extends EntityParent implements EntityInterfaceB
 {
     /**
      * @Assert\NotNull
@@ -38,6 +38,7 @@ class Entity extends EntityParent implements EntityInterface
     public $reference2;
     private $internal;
     public $data = 'Overridden data';
+    public $initialized = false;
 
     public function __construct($internal = null)
     {
@@ -62,8 +63,12 @@ class Entity extends EntityParent implements EntityInterface
         return $this->lastName;
     }
 
+    public function getValid()
+    {
+    }
+
     /**
-     * @Assert\True
+     * @Assert\IsTrue
      */
     public function isValid()
     {
@@ -71,7 +76,7 @@ class Entity extends EntityParent implements EntityInterface
     }
 
     /**
-     * @Assert\True
+     * @Assert\IsTrue
      */
     public function hasPermissions()
     {
@@ -84,7 +89,7 @@ class Entity extends EntityParent implements EntityInterface
     }
 
     /**
-     * @Assert\Callback
+     * @Assert\Callback(payload="foo")
      */
     public function validateMe(ExecutionContextInterface $context)
     {

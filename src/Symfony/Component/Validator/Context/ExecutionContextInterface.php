@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Validator\Context;
 
+use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ExecutionContextInterface as LegacyExecutionContextInterface;
 use Symfony\Component\Validator\Mapping\MetadataInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -55,7 +56,6 @@ use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
  * cannot store a context and expect that the methods still return the same
  * results later on.
  *
- * @since  2.5
  * @author Bernhard Schussek <bschussek@gmail.com>
  */
 interface ExecutionContextInterface extends LegacyExecutionContextInterface
@@ -66,7 +66,7 @@ interface ExecutionContextInterface extends LegacyExecutionContextInterface
      * Call {@link ConstraintViolationBuilderInterface::addViolation()} to
      * add the violation when you're done with the configuration:
      *
-     *     $context->buildViolation('Please enter a number between %min% and %max.')
+     *     $context->buildViolation('Please enter a number between %min% and %max%.')
      *         ->setParameter('%min%', 3)
      *         ->setParameter('%max%', 10)
      *         ->setTranslationDomain('number_validation')
@@ -109,22 +109,22 @@ interface ExecutionContextInterface extends LegacyExecutionContextInterface
      *
      * In other cases, null is returned.
      *
-     * @return object|null The currently validated object or null.
+     * @return object|null The currently validated object or null
      */
     public function getObject();
 
     /**
      * Sets the currently validated value.
      *
-     * @param mixed             $value        The validated value
-     * @param object|null       $object       The currently validated object
-     * @param MetadataInterface $metadata     The validation metadata
-     * @param string            $propertyPath The property path to the current value
+     * @param mixed                  $value        The validated value
+     * @param object|null            $object       The currently validated object
+     * @param MetadataInterface|null $metadata     The validation metadata
+     * @param string                 $propertyPath The property path to the current value
      *
      * @internal Used by the validator engine. Should not be called by user
      *           code.
      */
-    public function setNode($value, $object, MetadataInterface $metadata, $propertyPath);
+    public function setNode($value, $object, MetadataInterface $metadata = null, $propertyPath);
 
     /**
      * Sets the currently validated group.
@@ -137,11 +137,21 @@ interface ExecutionContextInterface extends LegacyExecutionContextInterface
     public function setGroup($group);
 
     /**
+     * Sets the currently validated constraint.
+     *
+     * @param Constraint $constraint The validated constraint
+     *
+     * @internal Used by the validator engine. Should not be called by user
+     *           code.
+     */
+    public function setConstraint(Constraint $constraint);
+
+    /**
      * Marks an object as validated in a specific validation group.
      *
-     * @param string $cacheKey The hash of the object
-     * @param string $groupHash  The group's name or hash, if it is group
-     *                           sequence
+     * @param string $cacheKey  The hash of the object
+     * @param string $groupHash The group's name or hash, if it is group
+     *                          sequence
      *
      * @internal Used by the validator engine. Should not be called by user
      *           code.
@@ -151,12 +161,12 @@ interface ExecutionContextInterface extends LegacyExecutionContextInterface
     /**
      * Returns whether an object was validated in a specific validation group.
      *
-     * @param string $cacheKey The hash of the object
-     * @param string $groupHash  The group's name or hash, if it is group
-     *                           sequence
+     * @param string $cacheKey  The hash of the object
+     * @param string $groupHash The group's name or hash, if it is group
+     *                          sequence
      *
-     * @return bool    Whether the object was already validated for that
-     *                 group
+     * @return bool Whether the object was already validated for that
+     *              group
      *
      * @internal Used by the validator engine. Should not be called by user
      *           code.
@@ -166,7 +176,7 @@ interface ExecutionContextInterface extends LegacyExecutionContextInterface
     /**
      * Marks a constraint as validated for an object.
      *
-     * @param string $cacheKey     The hash of the object
+     * @param string $cacheKey       The hash of the object
      * @param string $constraintHash The hash of the constraint
      *
      * @internal Used by the validator engine. Should not be called by user
@@ -177,13 +187,39 @@ interface ExecutionContextInterface extends LegacyExecutionContextInterface
     /**
      * Returns whether a constraint was validated for an object.
      *
-     * @param string $cacheKey     The hash of the object
+     * @param string $cacheKey       The hash of the object
      * @param string $constraintHash The hash of the constraint
      *
-     * @return bool    Whether the constraint was already validated
+     * @return bool Whether the constraint was already validated
      *
      * @internal Used by the validator engine. Should not be called by user
      *           code.
      */
     public function isConstraintValidated($cacheKey, $constraintHash);
+
+    /**
+     * Marks that an object was initialized.
+     *
+     * @param string $cacheKey The hash of the object
+     *
+     * @internal Used by the validator engine. Should not be called by user
+     *           code.
+     *
+     * @see ObjectInitializerInterface
+     */
+    public function markObjectAsInitialized($cacheKey);
+
+    /**
+     * Returns whether an object was initialized.
+     *
+     * @param string $cacheKey The hash of the object
+     *
+     * @return bool Whether the object was already initialized
+     *
+     * @internal Used by the validator engine. Should not be called by user
+     *           code.
+     *
+     * @see ObjectInitializerInterface
+     */
+    public function isObjectInitialized($cacheKey);
 }

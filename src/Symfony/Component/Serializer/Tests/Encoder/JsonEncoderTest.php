@@ -11,12 +11,16 @@
 
 namespace Symfony\Component\Serializer\Tests\Encoder;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
 
-class JsonEncoderTest extends \PHPUnit_Framework_TestCase
+class JsonEncoderTest extends TestCase
 {
+    private $encoder;
+    private $serializer;
+
     protected function setUp()
     {
         $this->encoder = new JsonEncoder();
@@ -26,7 +30,7 @@ class JsonEncoderTest extends \PHPUnit_Framework_TestCase
     public function testEncodeScalar()
     {
         $obj = new \stdClass();
-        $obj->foo = "foo";
+        $obj->foo = 'foo';
 
         $expected = '{"foo":"foo"}';
 
@@ -47,14 +51,14 @@ class JsonEncoderTest extends \PHPUnit_Framework_TestCase
         $context = array('json_encode_options' => JSON_NUMERIC_CHECK);
 
         $arr = array();
-        $arr['foo'] = "3";
+        $arr['foo'] = '3';
 
         $expected = '{"foo":3}';
 
         $this->assertEquals($expected, $this->serializer->serialize($arr, 'json', $context));
 
         $arr = array();
-        $arr['foo'] = "3";
+        $arr['foo'] = '3';
 
         $expected = '{"foo":"3"}';
 
@@ -72,7 +76,7 @@ class JsonEncoderTest extends \PHPUnit_Framework_TestCase
         $obj->foo = 'foo';
         $obj->bar = array('a', 'b');
         $obj->baz = array('key' => 'val', 'key2' => 'val', 'A B' => 'bar', 'item' => array(array('title' => 'title1'), array('title' => 'title2')), 'Barry' => array('FooBar' => array('Baz' => 'Ed', '@id' => 1)));
-        $obj->qux = "1";
+        $obj->qux = '1';
 
         return $obj;
     }

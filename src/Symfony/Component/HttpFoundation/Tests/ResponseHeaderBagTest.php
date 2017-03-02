@@ -11,13 +11,16 @@
 
 namespace Symfony\Component\HttpFoundation\Tests;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Cookie;
 
-class ResponseHeaderBagTest extends \PHPUnit_Framework_TestCase
+/**
+ * @group time-sensitive
+ */
+class ResponseHeaderBagTest extends TestCase
 {
     /**
-     * @covers Symfony\Component\HttpFoundation\ResponseHeaderBag::allPreserveCase
      * @dataProvider provideAllPreserveCase
      */
     public function testAllPreserveCase($headers, $expected)
@@ -32,31 +35,31 @@ class ResponseHeaderBagTest extends \PHPUnit_Framework_TestCase
         return array(
             array(
                 array('fOo' => 'BAR'),
-                array('fOo' => array('BAR'), 'Cache-Control' => array('no-cache'))
+                array('fOo' => array('BAR'), 'Cache-Control' => array('no-cache')),
             ),
             array(
                 array('ETag' => 'xyzzy'),
-                array('ETag' => array('xyzzy'), 'Cache-Control' => array('private, must-revalidate'))
+                array('ETag' => array('xyzzy'), 'Cache-Control' => array('private, must-revalidate')),
             ),
             array(
                 array('Content-MD5' => 'Q2hlY2sgSW50ZWdyaXR5IQ=='),
-                array('Content-MD5' => array('Q2hlY2sgSW50ZWdyaXR5IQ=='), 'Cache-Control' => array('no-cache'))
+                array('Content-MD5' => array('Q2hlY2sgSW50ZWdyaXR5IQ=='), 'Cache-Control' => array('no-cache')),
             ),
             array(
                 array('P3P' => 'CP="CAO PSA OUR"'),
-                array('P3P' => array('CP="CAO PSA OUR"'), 'Cache-Control' => array('no-cache'))
+                array('P3P' => array('CP="CAO PSA OUR"'), 'Cache-Control' => array('no-cache')),
             ),
             array(
                 array('WWW-Authenticate' => 'Basic realm="WallyWorld"'),
-                array('WWW-Authenticate' => array('Basic realm="WallyWorld"'), 'Cache-Control' => array('no-cache'))
+                array('WWW-Authenticate' => array('Basic realm="WallyWorld"'), 'Cache-Control' => array('no-cache')),
             ),
             array(
                 array('X-UA-Compatible' => 'IE=edge,chrome=1'),
-                array('X-UA-Compatible' => array('IE=edge,chrome=1'), 'Cache-Control' => array('no-cache'))
+                array('X-UA-Compatible' => array('IE=edge,chrome=1'), 'Cache-Control' => array('no-cache')),
             ),
             array(
                 array('X-XSS-Protection' => '1; mode=block'),
-                array('X-XSS-Protection' => array('1; mode=block'), 'Cache-Control' => array('no-cache'))
+                array('X-XSS-Protection' => array('1; mode=block'), 'Cache-Control' => array('no-cache')),
             ),
         );
     }
@@ -82,7 +85,7 @@ class ResponseHeaderBagTest extends \PHPUnit_Framework_TestCase
 
         $bag = new ResponseHeaderBag(array(
             'Expires' => 'Wed, 16 Feb 2011 14:17:43 GMT',
-            'Cache-Control' => 'max-age=3600'
+            'Cache-Control' => 'max-age=3600',
         ));
         $this->assertEquals('max-age=3600, private', $bag->get('Cache-Control'));
 
@@ -114,11 +117,20 @@ class ResponseHeaderBagTest extends \PHPUnit_Framework_TestCase
         $bag = new ResponseHeaderBag(array());
         $bag->setCookie(new Cookie('foo', 'bar'));
 
-        $this->assertContains("Set-Cookie: foo=bar; path=/; httponly", explode("\r\n", $bag->__toString()));
+        $this->assertSetCookieHeader('foo=bar; path=/; httponly', $bag);
 
         $bag->clearCookie('foo');
 
-        $this->assertContains("Set-Cookie: foo=deleted; expires=".gmdate("D, d-M-Y H:i:s T", time() - 31536001)."; path=/; httponly", explode("\r\n", $bag->__toString()));
+        $this->assertSetCookieHeader('foo=deleted; expires='.gmdate('D, d-M-Y H:i:s T', time() - 31536001).'; path=/; httponly', $bag);
+    }
+
+    public function testClearCookieSecureNotHttpOnly()
+    {
+        $bag = new ResponseHeaderBag(array());
+
+        $bag->clearCookie('foo', '/', null, true, false);
+
+        $this->assertSetCookieHeader('foo=deleted; expires='.gmdate('D, d-M-Y H:i:s T', time() - 31536001).'; path=/; secure', $bag);
     }
 
     public function testReplace()
@@ -154,11 +166,10 @@ class ResponseHeaderBagTest extends \PHPUnit_Framework_TestCase
 
         $this->assertCount(4, $bag->getCookies());
 
-        $headers = explode("\r\n", $bag->__toString());
-        $this->assertContains("Set-Cookie: foo=bar; path=/path/foo; domain=foo.bar; httponly", $headers);
-        $this->assertContains("Set-Cookie: foo=bar; path=/path/foo; domain=foo.bar; httponly", $headers);
-        $this->assertContains("Set-Cookie: foo=bar; path=/path/bar; domain=bar.foo; httponly", $headers);
-        $this->assertContains("Set-Cookie: foo=bar; path=/; httponly", $headers);
+        $this->assertSetCookieHeader('foo=bar; path=/path/foo; domain=foo.bar; httponly', $bag);
+        $this->assertSetCookieHeader('foo=bar; path=/path/bar; domain=foo.bar; httponly', $bag);
+        $this->assertSetCookieHeader('foo=bar; path=/path/bar; domain=bar.foo; httponly', $bag);
+        $this->assertSetCookieHeader('foo=bar; path=/; httponly', $bag);
 
         $cookies = $bag->getCookies(ResponseHeaderBag::COOKIES_ARRAY);
         $this->assertTrue(isset($cookies['foo.bar']['/path/foo']['foo']));
@@ -212,7 +223,7 @@ class ResponseHeaderBagTest extends \PHPUnit_Framework_TestCase
     {
         $bag = new ResponseHeaderBag();
 
-        $cookies = $bag->getCookies('invalid_argument');
+        $bag->getCookies('invalid_argument');
     }
 
     /**
@@ -282,5 +293,10 @@ class ResponseHeaderBagTest extends \PHPUnit_Framework_TestCase
             array('attachment', '\foo.html'),
             array('attachment', 'föö.html'),
         );
+    }
+
+    private function assertSetCookieHeader($expected, ResponseHeaderBag $actual)
+    {
+        $this->assertRegExp('#^Set-Cookie:\s+'.preg_quote($expected, '#').'$#m', str_replace("\r\n", "\n", (string) $actual));
     }
 }

@@ -37,18 +37,10 @@ class ExpressionValidator extends ConstraintValidator
      */
     private $expressionLanguage;
 
-    /**
-     * @param PropertyAccessorInterface|null $propertyAccessor Optional as of Symfony 2.5
-     *
-     * @throws UnexpectedTypeException If the property accessor is invalid
-     */
-    public function __construct($propertyAccessor = null)
+    public function __construct(PropertyAccessorInterface $propertyAccessor = null, ExpressionLanguage $expressionLanguage = null)
     {
-        if (null !== $propertyAccessor && !$propertyAccessor instanceof PropertyAccessorInterface) {
-            throw new UnexpectedTypeException($propertyAccessor, 'null or \Symfony\Component\PropertyAccess\PropertyAccessorInterface');
-        }
-
         $this->propertyAccessor = $propertyAccessor;
+        $this->expressionLanguage = $expressionLanguage;
     }
 
     /**
@@ -58,10 +50,6 @@ class ExpressionValidator extends ConstraintValidator
     {
         if (!$constraint instanceof Expression) {
             throw new UnexpectedTypeException($constraint, __NAMESPACE__.'\Expression');
-        }
-
-        if (null === $value || '' === $value) {
-            return;
         }
 
         $variables = array();
@@ -74,18 +62,32 @@ class ExpressionValidator extends ConstraintValidator
             $variables['value'] = $value;
             $variables['this'] = $value;
         } else {
-            // Extract the object that the property belongs to from the object
-            // graph
-            $path = new PropertyPath($this->context->getPropertyPath());
-            $parentPath = $path->getParent();
             $root = $this->context->getRoot();
-
             $variables['value'] = $value;
-            $variables['this'] = $parentPath ? $this->getPropertyAccessor()->getValue($root, $parentPath) : $root;
+
+            if (is_object($root)) {
+                // Extract the object that the property belongs to from the object
+                // graph
+                $path = new PropertyPath($this->context->getPropertyPath());
+                $parentPath = $path->getParent();
+                $variables['this'] = $parentPath ? $this->getPropertyAccessor()->getValue($root, $parentPath) : $root;
+            } else {
+                $variables['this'] = null;
+            }
         }
 
         if (!$this->getExpressionLanguage()->evaluate($constraint->expression, $variables)) {
-            $this->context->addViolation($constraint->message);
+            if ($this->context instanceof ExecutionContextInterface) {
+                $this->context->buildViolation($constraint->message)
+                    ->setParameter('{{ value }}', $this->formatValue($value))
+                    ->setCode(Expression::EXPRESSION_FAILED_ERROR)
+                    ->addViolation();
+            } else {
+                $this->buildViolation($constraint->message)
+                    ->setParameter('{{ value }}', $this->formatValue($value))
+                    ->setCode(Expression::EXPRESSION_FAILED_ERROR)
+                    ->addViolation();
+            }
         }
     }
 

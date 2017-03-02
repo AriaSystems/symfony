@@ -22,7 +22,7 @@ class ValidationBuilder
     public $rules = array();
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param NodeDefinition $node The related node
      */
@@ -36,7 +36,7 @@ class ValidationBuilder
      *
      * @param \Closure $closure
      *
-     * @return ExprBuilder|ValidationBuilder
+     * @return ExprBuilder|$this
      */
     public function rule(\Closure $closure = null)
     {

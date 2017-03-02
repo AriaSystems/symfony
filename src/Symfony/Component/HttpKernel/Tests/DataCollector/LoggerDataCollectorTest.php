@@ -11,17 +11,17 @@
 
 namespace Symfony\Component\HttpKernel\Tests\DataCollector;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\DataCollector\LoggerDataCollector;
-use Symfony\Component\HttpKernel\Debug\ErrorHandler;
 
-class LoggerDataCollectorTest extends \PHPUnit_Framework_TestCase
+class LoggerDataCollectorTest extends TestCase
 {
     /**
      * @dataProvider getCollectTestData
      */
     public function testCollect($nb, $logs, $expectedLogs, $expectedDeprecationCount, $expectedScreamCount, $expectedPriorities = null)
     {
-        $logger = $this->getMock('Symfony\Component\HttpKernel\Log\DebugLoggerInterface');
+        $logger = $this->getMockBuilder('Symfony\Component\HttpKernel\Log\DebugLoggerInterface')->getMock();
         $logger->expects($this->once())->method('countErrors')->will($this->returnValue($nb));
         $logger->expects($this->exactly(2))->method('getLogs')->will($this->returnValue($logs));
 
@@ -30,7 +30,7 @@ class LoggerDataCollectorTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame('logger', $c->getName());
         $this->assertSame($nb, $c->countErrors());
-        $this->assertSame($expectedLogs ? $expectedLogs : $logs, $c->getLogs());
+        $this->assertSame($expectedLogs ?: $logs, $c->getLogs());
         $this->assertSame($expectedDeprecationCount, $c->countDeprecations());
         $this->assertSame($expectedScreamCount, $c->countScreams());
 
@@ -66,14 +66,30 @@ class LoggerDataCollectorTest extends \PHPUnit_Framework_TestCase
             array(
                 1,
                 array(
-                    array('message' => 'foo', 'context' => array('type' => ErrorHandler::TYPE_DEPRECATION), 'priority' => 100, 'priorityName' => 'DEBUG'),
-                    array('message' => 'foo2', 'context' => array('type' => ErrorHandler::TYPE_DEPRECATION), 'priority' => 100, 'priorityName' => 'DEBUG'),
-                    array('message' => 'foo3', 'context' => array('type' => E_USER_WARNING, 'scream' => 0), 'priority' => 100, 'priorityName' => 'DEBUG'),
+                    array('message' => 'foo', 'context' => array('type' => E_DEPRECATED, 'level' => E_ALL), 'priority' => 100, 'priorityName' => 'DEBUG'),
+                    array('message' => 'foo2', 'context' => array('type' => E_USER_DEPRECATED, 'level' => E_ALL), 'priority' => 100, 'priorityName' => 'DEBUG'),
                 ),
                 null,
                 2,
+                0,
+                array(100 => array('count' => 2, 'name' => 'DEBUG')),
+            ),
+            array(
                 1,
-                array(100 => array('count' => 3, 'name' => 'DEBUG')),
+                array(array('message' => 'foo3', 'context' => array('name' => 'E_USER_WARNING', 'type' => E_USER_WARNING, 'level' => 0, 'file' => __FILE__, 'line' => 123), 'priority' => 100, 'priorityName' => 'DEBUG')),
+                array(array('message' => 'foo3', 'context' => array('name' => 'E_USER_WARNING', 'type' => E_USER_WARNING, 'level' => 0, 'file' => __FILE__, 'line' => 123, 'scream' => true), 'priority' => 100, 'priorityName' => 'DEBUG')),
+                0,
+                1,
+            ),
+            array(
+                1,
+                array(
+                    array('message' => 'foo3', 'context' => array('type' => E_USER_WARNING, 'level' => 0, 'file' => __FILE__, 'line' => 123), 'priority' => 100, 'priorityName' => 'DEBUG'),
+                    array('message' => 'foo3', 'context' => array('type' => E_USER_WARNING, 'level' => -1, 'file' => __FILE__, 'line' => 123), 'priority' => 100, 'priorityName' => 'DEBUG'),
+                ),
+                array(array('message' => 'foo3', 'context' => array('name' => 'E_USER_WARNING', 'type' => E_USER_WARNING, 'level' => -1, 'file' => __FILE__, 'line' => 123, 'errorCount' => 2), 'priority' => 100, 'priorityName' => 'DEBUG')),
+                0,
+                1,
             ),
         );
     }

@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+2.8.0
+-----
+
+ * allowed specifying a directory to recursively load all routing configuration files it contains
+ * Added ObjectRouteLoader and ServiceRouteLoader that allow routes to be loaded
+   by calling a method on an object/service.
+ * [DEPRECATION] Deprecated the hardcoded value for the `$referenceType` argument of the `UrlGeneratorInterface::generate` method.
+   Use the constants defined in the `UrlGeneratorInterface` instead.
+
+   Before:
+
+   ```php
+   $router->generate('blog_show', array('slug' => 'my-blog-post'), true);
+   ```
+
+   After:
+
+   ```php
+   use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+
+   $router->generate('blog_show', array('slug' => 'my-blog-post'), UrlGeneratorInterface::ABSOLUTE_URL);
+   ```
+
 2.5.0
 -----
 
@@ -23,17 +46,21 @@ CHANGELOG
 
    Before:
 
-   ```
+   ```yaml
    article_edit:
        pattern: /article/{id}
        requirements: { '_method': 'POST|PUT', '_scheme': 'https', 'id': '\d+' }
+   ```
 
+   ```xml
    <route id="article_edit" pattern="/article/{id}">
        <requirement key="_method">POST|PUT</requirement>
        <requirement key="_scheme">https</requirement>
        <requirement key="id">\d+</requirement>
    </route>
+   ```
 
+   ```php
    $route = new Route();
    $route->setPattern('/article/{id}');
    $route->setRequirement('_method', 'POST|PUT');
@@ -42,17 +69,21 @@ CHANGELOG
 
    After:
 
-   ```
+   ```yaml
    article_edit:
        path: /article/{id}
        methods: [POST, PUT]
        schemes: https
        requirements: { 'id': '\d+' }
+   ```
 
+   ```xml
    <route id="article_edit" pattern="/article/{id}" methods="POST PUT" schemes="https">
        <requirement key="id">\d+</requirement>
    </route>
+   ```
 
+   ```php
    $route = new Route();
    $route->setPath('/article/{id}');
    $route->setMethods(array('POST', 'PUT'));
@@ -66,7 +97,7 @@ CHANGELOG
 
    Before:
 
-   ```
+   ```php
    $rootCollection = new RouteCollection();
    $subCollection = new RouteCollection();
    $rootCollection->addCollection($subCollection);
@@ -75,7 +106,7 @@ CHANGELOG
 
    After:
 
-   ```
+   ```php
    $rootCollection = new RouteCollection();
    $subCollection = new RouteCollection();
    $subCollection->add('foo', new Route('/foo'));
@@ -85,8 +116,8 @@ CHANGELOG
    Also one must call `addCollection` from the bottom to the top hierarchy.
    So the correct sequence is the following (and not the reverse):
 
-   ```
-   $childCollection->->addCollection($grandchildCollection);
+   ```php
+   $childCollection->addCollection($grandchildCollection);
    $rootCollection->addCollection($childCollection);
    ```
 
@@ -112,7 +143,7 @@ CHANGELOG
    use-case instead.
    Before: `$parentCollection->addCollection($collection, '/prefix', array(...), array(...))`
    After:
-   ```
+   ```php
    $collection->addPrefix('/prefix', array(...), array(...));
    $parentCollection->addCollection($collection);
    ```
@@ -164,6 +195,6 @@ CHANGELOG
    been used anyway without creating inconsistencies
  * [BC BREAK] RouteCollection::remove also removes a route from parent
    collections (not only from its children)
- * added ConfigurableRequirementsInterface that allows to disable exceptions 
+ * added ConfigurableRequirementsInterface that allows to disable exceptions
    (and generate empty URLs instead) when generating a route with an invalid
    parameter value

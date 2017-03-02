@@ -11,11 +11,15 @@
 
 namespace Symfony\Component\Security\Core\Tests\Authorization;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManager;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 
-class AccessDecisionManagerTest extends \PHPUnit_Framework_TestCase
+class AccessDecisionManagerTest extends TestCase
 {
+    /**
+     * @group legacy
+     */
     public function testSupportsClass()
     {
         $manager = new AccessDecisionManager(array(
@@ -31,6 +35,9 @@ class AccessDecisionManagerTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($manager->supportsClass('FooClass'));
     }
 
+    /**
+     * @group legacy
+     */
     public function testSupportsAttribute()
     {
         $manager = new AccessDecisionManager(array(
@@ -49,14 +56,6 @@ class AccessDecisionManagerTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \InvalidArgumentException
      */
-    public function testSetVotersEmpty()
-    {
-        $manager = new AccessDecisionManager(array());
-    }
-
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testSetUnsupportedStrategy()
     {
         new AccessDecisionManager(array($this->getVoter(VoterInterface::ACCESS_GRANTED)), 'fooBar');
@@ -67,10 +66,52 @@ class AccessDecisionManagerTest extends \PHPUnit_Framework_TestCase
      */
     public function testStrategies($strategy, $voters, $allowIfAllAbstainDecisions, $allowIfEqualGrantedDeniedDecisions, $expected)
     {
-        $token = $this->getMock('Symfony\Component\Security\Core\Authentication\Token\TokenInterface');
+        $token = $this->getMockBuilder('Symfony\Component\Security\Core\Authentication\Token\TokenInterface')->getMock();
         $manager = new AccessDecisionManager($voters, $strategy, $allowIfAllAbstainDecisions, $allowIfEqualGrantedDeniedDecisions);
 
         $this->assertSame($expected, $manager->decide($token, array('ROLE_FOO')));
+    }
+
+    /**
+     * @dataProvider getStrategiesWith2RolesTests
+     */
+    public function testStrategiesWith2Roles($token, $strategy, $voter, $expected)
+    {
+        $manager = new AccessDecisionManager(array($voter), $strategy);
+
+        $this->assertSame($expected, $manager->decide($token, array('ROLE_FOO', 'ROLE_BAR')));
+    }
+
+    public function getStrategiesWith2RolesTests()
+    {
+        $token = $this->getMockBuilder('Symfony\Component\Security\Core\Authentication\Token\TokenInterface')->getMock();
+
+        return array(
+            array($token, 'affirmative', $this->getVoter(VoterInterface::ACCESS_DENIED), false),
+            array($token, 'affirmative', $this->getVoter(VoterInterface::ACCESS_GRANTED), true),
+
+            array($token, 'consensus', $this->getVoter(VoterInterface::ACCESS_DENIED), false),
+            array($token, 'consensus', $this->getVoter(VoterInterface::ACCESS_GRANTED), true),
+
+            array($token, 'unanimous', $this->getVoterFor2Roles($token, VoterInterface::ACCESS_DENIED, VoterInterface::ACCESS_DENIED), false),
+            array($token, 'unanimous', $this->getVoterFor2Roles($token, VoterInterface::ACCESS_DENIED, VoterInterface::ACCESS_GRANTED), false),
+            array($token, 'unanimous', $this->getVoterFor2Roles($token, VoterInterface::ACCESS_GRANTED, VoterInterface::ACCESS_DENIED), false),
+            array($token, 'unanimous', $this->getVoterFor2Roles($token, VoterInterface::ACCESS_GRANTED, VoterInterface::ACCESS_GRANTED), true),
+        );
+    }
+
+    protected function getVoterFor2Roles($token, $vote1, $vote2)
+    {
+        $voter = $this->getMockBuilder('Symfony\Component\Security\Core\Authorization\Voter\VoterInterface')->getMock();
+        $voter->expects($this->any())
+              ->method('vote')
+              ->will($this->returnValueMap(array(
+                  array($token, null, array('ROLE_FOO'), $vote1),
+                  array($token, null, array('ROLE_BAR'), $vote2),
+              )))
+        ;
+
+        return $voter;
     }
 
     public function getStrategyTests()
@@ -111,13 +152,13 @@ class AccessDecisionManagerTest extends \PHPUnit_Framework_TestCase
     protected function getVoters($grants, $denies, $abstains)
     {
         $voters = array();
-        for ($i = 0; $i < $grants; $i++) {
+        for ($i = 0; $i < $grants; ++$i) {
             $voters[] = $this->getVoter(VoterInterface::ACCESS_GRANTED);
         }
-        for ($i = 0; $i < $denies; $i++) {
+        for ($i = 0; $i < $denies; ++$i) {
             $voters[] = $this->getVoter(VoterInterface::ACCESS_DENIED);
         }
-        for ($i = 0; $i < $abstains; $i++) {
+        for ($i = 0; $i < $abstains; ++$i) {
             $voters[] = $this->getVoter(VoterInterface::ACCESS_ABSTAIN);
         }
 
@@ -126,33 +167,30 @@ class AccessDecisionManagerTest extends \PHPUnit_Framework_TestCase
 
     protected function getVoter($vote)
     {
-        $voter = $this->getMock('Symfony\Component\Security\Core\Authorization\Voter\VoterInterface');
+        $voter = $this->getMockBuilder('Symfony\Component\Security\Core\Authorization\Voter\VoterInterface')->getMock();
         $voter->expects($this->any())
               ->method('vote')
               ->will($this->returnValue($vote));
-        ;
 
         return $voter;
     }
 
     protected function getVoterSupportsClass($ret)
     {
-        $voter = $this->getMock('Symfony\Component\Security\Core\Authorization\Voter\VoterInterface');
+        $voter = $this->getMockBuilder('Symfony\Component\Security\Core\Authorization\Voter\VoterInterface')->getMock();
         $voter->expects($this->any())
               ->method('supportsClass')
               ->will($this->returnValue($ret));
-        ;
 
         return $voter;
     }
 
     protected function getVoterSupportsAttribute($ret)
     {
-        $voter = $this->getMock('Symfony\Component\Security\Core\Authorization\Voter\VoterInterface');
+        $voter = $this->getMockBuilder('Symfony\Component\Security\Core\Authorization\Voter\VoterInterface')->getMock();
         $voter->expects($this->any())
               ->method('supportsAttribute')
               ->will($this->returnValue($ret));
-        ;
 
         return $voter;
     }

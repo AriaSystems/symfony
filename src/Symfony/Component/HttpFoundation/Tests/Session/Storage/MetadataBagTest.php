@@ -11,12 +11,15 @@
 
 namespace Symfony\Component\HttpFoundation\Tests\Session\Storage;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Session\Storage\MetadataBag;
 
 /**
  * Test class for MetadataBag.
+ *
+ * @group time-sensitive
  */
-class MetadataBagTest extends \PHPUnit_Framework_TestCase
+class MetadataBagTest extends TestCase
 {
     /**
      * @var MetadataBag
@@ -30,6 +33,7 @@ class MetadataBagTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
+        parent::setUp();
         $this->bag = new MetadataBag();
         $this->array = array(MetadataBag::CREATED => 1234567, MetadataBag::UPDATED => 12345678, MetadataBag::LIFETIME => 0);
         $this->bag->initialize($this->array);
@@ -39,6 +43,7 @@ class MetadataBagTest extends \PHPUnit_Framework_TestCase
     {
         $this->array = array();
         $this->bag = null;
+        parent::tearDown();
     }
 
     public function testInitialize()
@@ -70,7 +75,6 @@ class MetadataBagTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('__metadata', $this->bag->getName());
         $this->bag->setName('foo');
         $this->assertEquals('foo', $this->bag->getName());
-
     }
 
     public function testGetStorageKey()
@@ -110,7 +114,7 @@ class MetadataBagTest extends \PHPUnit_Framework_TestCase
         $sessionMetadata = array(
             MetadataBag::CREATED => $created,
             MetadataBag::UPDATED => $created,
-            MetadataBag::LIFETIME => 1000
+            MetadataBag::LIFETIME => 1000,
         );
         $bag->initialize($sessionMetadata);
 
@@ -126,7 +130,7 @@ class MetadataBagTest extends \PHPUnit_Framework_TestCase
         $sessionMetadata = array(
             MetadataBag::CREATED => $created,
             MetadataBag::UPDATED => $created,
-            MetadataBag::LIFETIME => 1000
+            MetadataBag::LIFETIME => 1000,
         );
         $bag->initialize($sessionMetadata);
 

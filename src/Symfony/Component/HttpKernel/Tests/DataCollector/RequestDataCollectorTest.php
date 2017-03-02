@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\HttpKernel\Tests\DataCollector;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\DataCollector\RequestDataCollector;
@@ -20,7 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
-class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
+class RequestDataCollectorTest extends TestCase
 {
     public function testCollect()
     {
@@ -31,7 +32,7 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
         $attributes = $c->getRequestAttributes();
 
         $this->assertSame('request', $c->getName());
-        $this->assertInstanceOf('Symfony\Component\HttpFoundation\HeaderBag', $c->getRequestHeaders());
+        $this->assertInstanceOf('Symfony\Component\HttpFoundation\ParameterBag', $c->getRequestHeaders());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\ParameterBag', $c->getRequestServer());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\ParameterBag', $c->getRequestCookies());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\ParameterBag', $attributes);
@@ -45,7 +46,7 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
         $this->assertRegExp('/Resource\(stream#\d+\)/', $attributes->get('resource'));
         $this->assertSame('Object(stdClass)', $attributes->get('object'));
 
-        $this->assertInstanceOf('Symfony\Component\HttpFoundation\HeaderBag', $c->getResponseHeaders());
+        $this->assertInstanceOf('Symfony\Component\HttpFoundation\ParameterBag', $c->getResponseHeaders());
         $this->assertSame('OK', $c->getStatusText());
         $this->assertSame(200, $c->getStatusCode());
         $this->assertSame('application/json', $c->getContentType());
@@ -59,6 +60,7 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
         // make sure we always match the line number
         $r1 = new \ReflectionMethod($this, 'testControllerInspection');
         $r2 = new \ReflectionMethod($this, 'staticControllerMethod');
+        $r3 = new \ReflectionClass($this);
         // test name, callable, expected
         $controllerTests = array(
             array(
@@ -68,7 +70,7 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
                     'class' => 'Symfony\Component\HttpKernel\Tests\DataCollector\RequestDataCollectorTest',
                     'method' => 'testControllerInspection',
                     'file' => __FILE__,
-                    'line' => $r1->getStartLine()
+                    'line' => $r1->getStartLine(),
                 ),
             ),
 
@@ -96,7 +98,7 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
                     'class' => 'Symfony\Component\HttpKernel\Tests\DataCollector\RequestDataCollectorTest',
                     'method' => 'staticControllerMethod',
                     'file' => __FILE__,
-                    'line' => $r2->getStartLine()
+                    'line' => $r2->getStartLine(),
                 ),
             ),
 
@@ -107,7 +109,7 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
                     'class' => 'Symfony\Component\HttpKernel\Tests\DataCollector\RequestDataCollectorTest',
                     'method' => 'staticControllerMethod',
                     'file' => __FILE__,
-                    'line' => $r2->getStartLine()
+                    'line' => $r2->getStartLine(),
                 ),
             ),
 
@@ -118,7 +120,7 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
                     'class' => 'Symfony\Component\HttpKernel\Tests\DataCollector\RequestDataCollectorTest',
                     'method' => 'magicMethod',
                     'file' => 'n/a',
-                    'line' => 'n/a'
+                    'line' => 'n/a',
                 ),
             ),
 
@@ -129,7 +131,18 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
                     'class' => 'Symfony\Component\HttpKernel\Tests\DataCollector\RequestDataCollectorTest',
                     'method' => 'magicMethod',
                     'file' => 'n/a',
-                    'line' => 'n/a'
+                    'line' => 'n/a',
+                ),
+            ),
+
+            array(
+                'Invokable controller',
+                $this,
+                array(
+                    'class' => 'Symfony\Component\HttpKernel\Tests\DataCollector\RequestDataCollectorTest',
+                    'method' => null,
+                    'file' => __FILE__,
+                    'line' => $r3->getStartLine(),
                 ),
             ),
         );
@@ -161,9 +174,9 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
         $response = new Response();
         $response->setStatusCode(200);
         $response->headers->set('Content-Type', 'application/json');
-        $response->headers->setCookie(new Cookie('foo','bar',1,'/foo','localhost',true,true));
-        $response->headers->setCookie(new Cookie('bar','foo',new \DateTime('@946684800')));
-        $response->headers->setCookie(new Cookie('bazz','foo','2000-12-12'));
+        $response->headers->setCookie(new Cookie('foo', 'bar', 1, '/foo', 'localhost', true, true));
+        $response->headers->setCookie(new Cookie('bar', 'foo', new \DateTime('@946684800')));
+        $response->headers->setCookie(new Cookie('bazz', 'foo', '2000-12-12'));
 
         return $response;
     }
@@ -173,14 +186,14 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
      */
     protected function injectController($collector, $controller, $request)
     {
-        $resolver = $this->getMock('Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface');
+        $resolver = $this->getMockBuilder('Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface')->getMock();
         $httpKernel = new HttpKernel(new EventDispatcher(), $resolver);
         $event = new FilterControllerEvent($httpKernel, $controller, $request, HttpKernelInterface::MASTER_REQUEST);
         $collector->onKernelController($event);
     }
 
     /**
-     * Dummy method used as controller callable
+     * Dummy method used as controller callable.
      */
     public static function staticControllerMethod()
     {
@@ -203,4 +216,8 @@ class RequestDataCollectorTest extends \PHPUnit_Framework_TestCase
         throw new \LogicException('Unexpected method call');
     }
 
+    public function __invoke()
+    {
+        throw new \LogicException('Unexpected method call');
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of the Symfony package.
  *
@@ -10,12 +11,13 @@
 
 namespace Symfony\Component\Form\Tests\Extension\DataCollector;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Form\Extension\DataCollector\FormDataCollector;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Form\FormView;
 
-class FormDataCollectorTest extends \PHPUnit_Framework_TestCase
+class FormDataCollectorTest extends TestCase
 {
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject
@@ -64,11 +66,11 @@ class FormDataCollectorTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->dataExtractor = $this->getMock('Symfony\Component\Form\Extension\DataCollector\FormDataExtractorInterface');
+        $this->dataExtractor = $this->getMockBuilder('Symfony\Component\Form\Extension\DataCollector\FormDataExtractorInterface')->getMock();
         $this->dataCollector = new FormDataCollector($this->dataExtractor);
-        $this->dispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
-        $this->factory = $this->getMock('Symfony\Component\Form\FormFactoryInterface');
-        $this->dataMapper = $this->getMock('Symfony\Component\Form\DataMapperInterface');
+        $this->dispatcher = $this->getMockBuilder('Symfony\Component\EventDispatcher\EventDispatcherInterface')->getMock();
+        $this->factory = $this->getMockBuilder('Symfony\Component\Form\FormFactoryInterface')->getMock();
+        $this->dataMapper = $this->getMockBuilder('Symfony\Component\Form\DataMapperInterface')->getMock();
         $this->form = $this->createForm('name');
         $this->childForm = $this->createForm('child');
         $this->view = new FormView();
@@ -497,16 +499,21 @@ class FormDataCollectorTest extends \PHPUnit_Framework_TestCase
         $form2 = $this->createForm('form2');
 
         $form1->add($childForm1);
-
-        $this->dataExtractor->expects($this->at(0))
+        $this->dataExtractor
+             ->method('extractConfiguration')
+             ->will($this->returnValue(array()));
+        $this->dataExtractor
+             ->method('extractDefaultData')
+             ->will($this->returnValue(array()));
+        $this->dataExtractor->expects($this->at(4))
             ->method('extractSubmittedData')
             ->with($form1)
             ->will($this->returnValue(array('errors' => array('foo'))));
-        $this->dataExtractor->expects($this->at(1))
+        $this->dataExtractor->expects($this->at(5))
             ->method('extractSubmittedData')
             ->with($childForm1)
             ->will($this->returnValue(array('errors' => array('bar', 'bam'))));
-        $this->dataExtractor->expects($this->at(2))
+        $this->dataExtractor->expects($this->at(8))
             ->method('extractSubmittedData')
             ->with($form2)
             ->will($this->returnValue(array('errors' => array('baz'))));
@@ -520,7 +527,6 @@ class FormDataCollectorTest extends \PHPUnit_Framework_TestCase
 
         $data = $this->dataCollector->getData();
         $this->assertSame(4, $data['nb_errors']);
-
     }
 
     private function createForm($name)

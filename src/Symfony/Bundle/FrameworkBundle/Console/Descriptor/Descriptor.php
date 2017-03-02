@@ -12,17 +12,20 @@
 namespace Symfony\Bundle\FrameworkBundle\Console\Descriptor;
 
 use Symfony\Component\Console\Descriptor\DescriptorInterface;
-use Symfony\Component\Console\Helper\TableHelper;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
 /**
  * @author Jean-François Simon <jeanfrancois.simon@sensiolabs.com>
+ *
+ * @internal
  */
 abstract class Descriptor implements DescriptorInterface
 {
@@ -66,16 +69,32 @@ abstract class Descriptor implements DescriptorInterface
             case $object instanceof Alias:
                 $this->describeContainerAlias($object, $options);
                 break;
+            case $object instanceof EventDispatcherInterface:
+                $this->describeEventDispatcherListeners($object, $options);
+                break;
+            case is_callable($object):
+                $this->describeCallable($object, $options);
+                break;
             default:
                 throw new \InvalidArgumentException(sprintf('Object of type "%s" is not describable.', get_class($object)));
         }
     }
 
     /**
+     * Returns the output.
+     *
+     * @return OutputInterface The output
+     */
+    protected function getOutput()
+    {
+        return $this->output;
+    }
+
+    /**
      * Writes content to output.
      *
-     * @param string  $content
-     * @param bool    $decorated
+     * @param string $content
+     * @param bool   $decorated
      */
     protected function write($content, $decorated = false)
     {
@@ -85,17 +104,18 @@ abstract class Descriptor implements DescriptorInterface
     /**
      * Writes content to output.
      *
-     * @param TableHelper $table
-     * @param bool        $decorated
+     * @param Table $table
+     * @param bool  $decorated
      */
-    protected function renderTable(TableHelper $table, $decorated = false)
+    protected function renderTable(Table $table, $decorated = false)
     {
         if (!$decorated) {
-            $table->setCellRowFormat('%s');
-            $table->setCellHeaderFormat('%s');
+            $table->getStyle()->setCellRowFormat('%s');
+            $table->getStyle()->setCellRowContentFormat('%s');
+            $table->getStyle()->setCellHeaderFormat('%s');
         }
 
-        $table->render($this->output);
+        $table->render();
     }
 
     /**
@@ -177,6 +197,25 @@ abstract class Descriptor implements DescriptorInterface
     abstract protected function describeContainerParameter($parameter, array $options = array());
 
     /**
+     * Describes event dispatcher listeners.
+     *
+     * Common options are:
+     * * name: name of listened event
+     *
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param array                    $options
+     */
+    abstract protected function describeEventDispatcherListeners(EventDispatcherInterface $eventDispatcher, array $options = array());
+
+    /**
+     * Describes a callable.
+     *
+     * @param callable $callable
+     * @param array    $options
+     */
+    abstract protected function describeCallable($callable, array $options = array());
+
+    /**
      * Formats a value as string.
      *
      * @param mixed $value
@@ -233,6 +272,10 @@ abstract class Descriptor implements DescriptorInterface
         // Some service IDs don't have a Definition, they're simply an Alias
         if ($builder->hasAlias($serviceId)) {
             return $builder->getAlias($serviceId);
+        }
+
+        if ('service_container' === $serviceId) {
+            return $builder;
         }
 
         // the service has been injected in some special way, just return the service

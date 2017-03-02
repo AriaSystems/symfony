@@ -12,15 +12,22 @@
 namespace Symfony\Bridge\Monolog\Tests\Handler;
 
 use Monolog\Logger;
+use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Monolog\Handler\ConsoleHandler;
+use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Tests the ConsoleHandler and also the ConsoleFormatter.
  *
  * @author Tobias Schultze <http://tobion.de>
  */
-class ConsoleHandlerTest extends \PHPUnit_Framework_TestCase
+class ConsoleHandlerTest extends TestCase
 {
     public function testConstructor()
     {
@@ -39,7 +46,7 @@ class ConsoleHandlerTest extends \PHPUnit_Framework_TestCase
      */
     public function testVerbosityMapping($verbosity, $level, $isHandling, array $map = array())
     {
-        $output = $this->getMock('Symfony\Component\Console\Output\OutputInterface');
+        $output = $this->getMockBuilder('Symfony\Component\Console\Output\OutputInterface')->getMock();
         $output
             ->expects($this->atLeastOnce())
             ->method('getVerbosity')
@@ -64,17 +71,17 @@ class ConsoleHandlerTest extends \PHPUnit_Framework_TestCase
             array(OutputInterface::VERBOSITY_DEBUG, Logger::DEBUG, true),
             array(OutputInterface::VERBOSITY_DEBUG, Logger::EMERGENCY, true),
             array(OutputInterface::VERBOSITY_NORMAL, Logger::NOTICE, true, array(
-                OutputInterface::VERBOSITY_NORMAL => Logger::NOTICE
+                OutputInterface::VERBOSITY_NORMAL => Logger::NOTICE,
             )),
             array(OutputInterface::VERBOSITY_DEBUG, Logger::NOTICE, true, array(
-                OutputInterface::VERBOSITY_NORMAL => Logger::NOTICE
+                OutputInterface::VERBOSITY_NORMAL => Logger::NOTICE,
             )),
         );
     }
 
     public function testVerbosityChanged()
     {
-        $output = $this->getMock('Symfony\Component\Console\Output\OutputInterface');
+        $output = $this->getMockBuilder('Symfony\Component\Console\Output\OutputInterface')->getMock();
         $output
             ->expects($this->at(0))
             ->method('getVerbosity')
@@ -104,7 +111,7 @@ class ConsoleHandlerTest extends \PHPUnit_Framework_TestCase
 
     public function testWritingAndFormatting()
     {
-        $output = $this->getMock('Symfony\Component\Console\Output\ConsoleOutputInterface');
+        $output = $this->getMockBuilder('Symfony\Component\Console\Output\OutputInterface')->getMock();
         $output
             ->expects($this->any())
             ->method('getVerbosity')
@@ -113,20 +120,7 @@ class ConsoleHandlerTest extends \PHPUnit_Framework_TestCase
         $output
             ->expects($this->once())
             ->method('write')
-            ->with('<info>[2013-05-29 16:21:54] app.INFO:</info> My info message [] []'."\n")
-        ;
-
-        $errorOutput = $this->getMock('Symfony\Component\Console\Output\OutputInterface');
-        $errorOutput
-            ->expects($this->once())
-            ->method('write')
-            ->with('<error>[2013-05-29 16:21:54] app.ERROR:</error> My error message [] []'."\n")
-        ;
-
-        $output
-            ->expects($this->any())
-            ->method('getErrorOutput')
-            ->will($this->returnValue($errorOutput))
+            ->with('<info>[2013-05-29 16:21:54] app.INFO:</info> My info message  '."\n")
         ;
 
         $handler = new ConsoleHandler(null, false);
@@ -143,17 +137,43 @@ class ConsoleHandlerTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertTrue($handler->handle($infoRecord), 'The handler finished handling the log as bubble is false.');
+    }
 
-        $errorRecord = array(
-            'message' => 'My error message',
-            'context' => array(),
-            'level' => Logger::ERROR,
-            'level_name' => Logger::getLevelName(Logger::ERROR),
-            'channel' => 'app',
-            'datetime' => new \DateTime('2013-05-29 16:21:54'),
-            'extra' => array(),
-        );
+    public function testLogsFromListeners()
+    {
+        $output = new BufferedOutput();
+        $output->setVerbosity(OutputInterface::VERBOSITY_DEBUG);
 
-        $this->assertTrue($handler->handle($errorRecord), 'The handler finished handling the log as bubble is false.');
+        $handler = new ConsoleHandler(null, false);
+
+        $logger = new Logger('app');
+        $logger->pushHandler($handler);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(ConsoleEvents::COMMAND, function () use ($logger) {
+            $logger->addInfo('Before command message.');
+        });
+        $dispatcher->addListener(ConsoleEvents::TERMINATE, function () use ($logger) {
+            $logger->addInfo('Before terminate message.');
+        });
+
+        $dispatcher->addSubscriber($handler);
+
+        $dispatcher->addListener(ConsoleEvents::COMMAND, function () use ($logger) {
+            $logger->addInfo('After command message.');
+        });
+        $dispatcher->addListener(ConsoleEvents::TERMINATE, function () use ($logger) {
+            $logger->addInfo('After terminate message.');
+        });
+
+        $event = new ConsoleCommandEvent(new Command('foo'), $this->getMockBuilder('Symfony\Component\Console\Input\InputInterface')->getMock(), $output);
+        $dispatcher->dispatch(ConsoleEvents::COMMAND, $event);
+        $this->assertContains('Before command message.', $out = $output->fetch());
+        $this->assertContains('After command message.', $out);
+
+        $event = new ConsoleTerminateEvent(new Command('foo'), $this->getMockBuilder('Symfony\Component\Console\Input\InputInterface')->getMock(), $output, 0);
+        $dispatcher->dispatch(ConsoleEvents::TERMINATE, $event);
+        $this->assertContains('Before terminate message.', $out = $output->fetch());
+        $this->assertContains('After terminate message.', $out);
     }
 }

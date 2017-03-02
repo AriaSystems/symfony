@@ -11,9 +11,10 @@
 
 namespace Symfony\Component\PropertyAccess\Tests;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\PropertyAccess\PropertyPath;
 
-class PropertyPathTest extends \PHPUnit_Framework_TestCase
+class PropertyPathTest extends TestCase
 {
     public function testToString()
     {
@@ -69,7 +70,7 @@ class PropertyPathTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Symfony\Component\PropertyAccess\Exception\UnexpectedTypeException
+     * @expectedException \Symfony\Component\PropertyAccess\Exception\InvalidArgumentException
      */
     public function testPathCannotBeNull()
     {
@@ -77,7 +78,7 @@ class PropertyPathTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Symfony\Component\PropertyAccess\Exception\UnexpectedTypeException
+     * @expectedException \Symfony\Component\PropertyAccess\Exception\InvalidArgumentException
      */
     public function testPathCannotBeFalse()
     {

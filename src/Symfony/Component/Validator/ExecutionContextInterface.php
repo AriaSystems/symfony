@@ -81,9 +81,7 @@ namespace Symfony\Component\Validator;
  *
  * @author Bernhard Schussek <bschussek@gmail.com>
  *
- * @api
- *
- * @deprecated Deprecated since version 2.5, to be removed in Symfony 3.0.
+ * @deprecated since version 2.5, to be removed in 3.0.
  *             Use {@link Context\ExecutionContextInterface} instead.
  */
 interface ExecutionContextInterface
@@ -91,17 +89,13 @@ interface ExecutionContextInterface
     /**
      * Adds a violation at the current node of the validation graph.
      *
+     * Note: the parameters $invalidValue, $plural and $code are deprecated since version 2.5 and will be removed in 3.0.
+     *
      * @param string   $message      The error message
      * @param array    $params       The parameters substituted in the error message
      * @param mixed    $invalidValue The invalid, validated value
      * @param int|null $plural       The number to use to pluralize of the message
      * @param int|null $code         The violation code
-     *
-     * @api
-     *
-     * @deprecated The parameters $invalidValue, $pluralization and $code are
-     *             deprecated since version 2.5 and will be removed in
-     *             Symfony 3.0.
      */
     public function addViolation($message, array $params = array(), $invalidValue = null, $plural = null, $code = null);
 
@@ -109,16 +103,14 @@ interface ExecutionContextInterface
      * Adds a violation at the validation graph node with the given property
      * path relative to the current property path.
      *
-     * @param string   $subPath       The relative property path for the violation
-     * @param string   $message       The error message
-     * @param array    $parameters    The parameters substituted in the error message
-     * @param mixed    $invalidValue  The invalid, validated value
-     * @param int|null $plural        The number to use to pluralize of the message
-     * @param int|null $code          The violation code
+     * @param string   $subPath      The relative property path for the violation
+     * @param string   $message      The error message
+     * @param array    $parameters   The parameters substituted in the error message
+     * @param mixed    $invalidValue The invalid, validated value
+     * @param int|null $plural       The number to use to pluralize of the message
+     * @param int|null $code         The violation code
      *
-     * @api
-     *
-     * @deprecated Deprecated since version 2.5, to be removed in Symfony 3.0.
+     * @deprecated since version 2.5, to be removed in 3.0.
      *             Use {@link Context\ExecutionContextInterface::buildViolation()}
      *             instead.
      */
@@ -153,8 +145,8 @@ interface ExecutionContextInterface
      * Any violations generated during the validation will be added to the
      * violation list that you can access with {@link getViolations}.
      *
-     * @param mixed                $value    The value to validate.
-     * @param string               $subPath  The path to append to the context's property path.
+     * @param mixed                $value    The value to validate
+     * @param string               $subPath  The path to append to the context's property path
      * @param null|string|string[] $groups   The groups to validate in. If you don't pass any
      *                                       groups here, the current group of the context
      *                                       will be used.
@@ -163,7 +155,7 @@ interface ExecutionContextInterface
      * @param bool                 $deep     Whether to traverse the value recursively if
      *                                       it is a collection of collections.
      *
-     * @deprecated Deprecated since version 2.5, to be removed in Symfony 3.0.
+     * @deprecated since version 2.5, to be removed in 3.0.
      *             Use {@link Context\ExecutionContextInterface::getValidator()}
      *             instead.
      */
@@ -189,14 +181,14 @@ interface ExecutionContextInterface
      * $context->validate($address->street, new NotNull(), 'street');
      * </pre>
      *
-     * @param mixed                   $value       The value to validate.
-     * @param Constraint|Constraint[] $constraints The constraint(s) to validate against.
-     * @param string                  $subPath     The path to append to the context's property path.
+     * @param mixed                   $value       The value to validate
+     * @param Constraint|Constraint[] $constraints The constraint(s) to validate against
+     * @param string                  $subPath     The path to append to the context's property path
      * @param null|string|string[]    $groups      The groups to validate in. If you don't pass any
      *                                             groups here, the current group of the context
      *                                             will be used.
      *
-     * @deprecated Deprecated since version 2.5, to be removed in Symfony 3.0.
+     * @deprecated since version 2.5, to be removed in 3.0.
      *             Use {@link Context\ExecutionContextInterface::getValidator()}
      *             instead.
      */
@@ -205,9 +197,7 @@ interface ExecutionContextInterface
     /**
      * Returns the violations generated by the validator so far.
      *
-     * @return ConstraintViolationListInterface The constraint violation list.
-     *
-     * @api
+     * @return ConstraintViolationListInterface The constraint violation list
      */
     public function getViolations();
 
@@ -220,7 +210,7 @@ interface ExecutionContextInterface
      *
      * The current value is returned by {@link getValue}.
      *
-     * @return mixed The root value of the validation.
+     * @return mixed The root value of the validation
      */
     public function getRoot();
 
@@ -230,7 +220,7 @@ interface ExecutionContextInterface
      * If you want to retrieve the object that was originally passed to the
      * validator, use {@link getRoot}.
      *
-     * @return mixed The currently validated value.
+     * @return mixed The currently validated value
      */
     public function getValue();
 
@@ -255,9 +245,9 @@ interface ExecutionContextInterface
     /**
      * Returns the used metadata factory.
      *
-     * @return MetadataFactoryInterface The metadata factory.
+     * @return MetadataFactoryInterface The metadata factory
      *
-     * @deprecated Deprecated since version 2.5, to be removed in Symfony 3.0.
+     * @deprecated since version 2.5, to be removed in 3.0.
      *             Use {@link Context\ExecutionContextInterface::getValidator()}
      *             instead and call
      *             {@link Validator\ValidatorInterface::getMetadataFor()} or
@@ -268,7 +258,7 @@ interface ExecutionContextInterface
     /**
      * Returns the validation group that is currently being validated.
      *
-     * @return string The current validation group.
+     * @return string The current validation group
      */
     public function getGroup();
 
@@ -279,7 +269,7 @@ interface ExecutionContextInterface
      * {@link ClassBasedInterface} or if no metadata is available for the
      * current node, this method returns null.
      *
-     * @return string|null The class name or null, if no class name could be found.
+     * @return string|null The class name or null, if no class name could be found
      */
     public function getClassName();
 
@@ -290,7 +280,7 @@ interface ExecutionContextInterface
      * {@link PropertyMetadataInterface} or if no metadata is available for the
      * current node, this method returns null.
      *
-     * @return string|null The property name or null, if no property name could be found.
+     * @return string|null The property name or null, if no property name could be found
      */
     public function getPropertyName();
 

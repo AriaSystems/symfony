@@ -11,15 +11,18 @@
 
 namespace Symfony\Component\DependencyInjection\Tests\Compiler;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Scope;
-
 use Symfony\Component\DependencyInjection\Compiler\CheckReferenceValidityPass;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
-class CheckReferenceValidityPassTest extends \PHPUnit_Framework_TestCase
+class CheckReferenceValidityPassTest extends TestCase
 {
+    /**
+     * @group legacy
+     */
     public function testProcessIgnoresScopeWideningIfNonStrictReference()
     {
         $container = new ContainerBuilder();
@@ -31,6 +34,7 @@ class CheckReferenceValidityPassTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \RuntimeException
+     * @group legacy
      */
     public function testProcessDetectsScopeWidening()
     {
@@ -41,6 +45,9 @@ class CheckReferenceValidityPassTest extends \PHPUnit_Framework_TestCase
         $this->process($container);
     }
 
+    /**
+     * @group legacy
+     */
     public function testProcessIgnoresCrossScopeHierarchyReferenceIfNotStrict()
     {
         $container = new ContainerBuilder();
@@ -55,6 +62,7 @@ class CheckReferenceValidityPassTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \RuntimeException
+     * @group legacy
      */
     public function testProcessDetectsCrossScopeHierarchyReference()
     {

@@ -18,10 +18,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 
 /**
- * PSR-3 compliant console logger
+ * PSR-3 compliant console logger.
  *
  * @author Kévin Dunglas <dunglas@gmail.com>
- * @link http://www.php-fig.org/psr/psr-3/
+ *
+ * @see http://www.php-fig.org/psr/psr-3/
  */
 class ConsoleLogger extends AbstractLogger
 {
@@ -43,7 +44,7 @@ class ConsoleLogger extends AbstractLogger
         LogLevel::WARNING => OutputInterface::VERBOSITY_NORMAL,
         LogLevel::NOTICE => OutputInterface::VERBOSITY_VERBOSE,
         LogLevel::INFO => OutputInterface::VERBOSITY_VERY_VERBOSE,
-        LogLevel::DEBUG => OutputInterface::VERBOSITY_DEBUG
+        LogLevel::DEBUG => OutputInterface::VERBOSITY_DEBUG,
     );
     /**
      * @var array
@@ -56,7 +57,7 @@ class ConsoleLogger extends AbstractLogger
         LogLevel::WARNING => self::INFO,
         LogLevel::NOTICE => self::INFO,
         LogLevel::INFO => self::INFO,
-        LogLevel::DEBUG => self::INFO
+        LogLevel::DEBUG => self::INFO,
     );
 
     /**
@@ -93,11 +94,13 @@ class ConsoleLogger extends AbstractLogger
     }
 
     /**
-     * Interpolates context values into the message placeholders
+     * Interpolates context values into the message placeholders.
      *
      * @author PHP Framework Interoperability Group
-     * @param  string $message
-     * @param  array  $context
+     *
+     * @param string $message
+     * @param array  $context
+     *
      * @return string
      */
     private function interpolate($message, array $context)

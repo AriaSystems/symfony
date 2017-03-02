@@ -11,10 +11,11 @@
 
 namespace Symfony\Component\Config\Tests\Definition;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\NodeInterface;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 
-class NormalizationTest extends \PHPUnit_Framework_TestCase
+class NormalizationTest extends TestCase
 {
     /**
      * @dataProvider getEncoderTests
@@ -176,8 +177,8 @@ class NormalizationTest extends \PHPUnit_Framework_TestCase
     {
         $denormalized = array(
             'thing' => array(
-                array('foo', 'bar'), array('baz', 'qux')
-            )
+                array('foo', 'bar'), array('baz', 'qux'),
+            ),
         );
 
         $this->assertNormalized($this->getNumericKeysTestTree(), $denormalized, array());

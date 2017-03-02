@@ -12,7 +12,7 @@
 namespace Symfony\Component\HttpKernel\EventListener;
 
 use Symfony\Component\HttpFoundation\Cookie;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -30,7 +30,7 @@ abstract class TestSessionListener implements EventSubscriberInterface
 {
     public function onKernelRequest(GetResponseEvent $event)
     {
-        if (HttpKernelInterface::MASTER_REQUEST !== $event->getRequestType()) {
+        if (!$event->isMasterRequest()) {
             return;
         }
 
@@ -49,13 +49,13 @@ abstract class TestSessionListener implements EventSubscriberInterface
 
     /**
      * Checks if session was initialized and saves if current request is master
-     * Runs on 'kernel.response' in test environment
+     * Runs on 'kernel.response' in test environment.
      *
      * @param FilterResponseEvent $event
      */
     public function onKernelResponse(FilterResponseEvent $event)
     {
-        if (HttpKernelInterface::MASTER_REQUEST !== $event->getRequestType()) {
+        if (!$event->isMasterRequest()) {
             return;
         }
 
@@ -78,7 +78,7 @@ abstract class TestSessionListener implements EventSubscriberInterface
     /**
      * Gets the session object.
      *
-     * @return SessionInterface|null A SessionInterface instance of null if no session is available
+     * @return SessionInterface|null A SessionInterface instance or null if no session is available
      */
     abstract protected function getSession();
 }

@@ -20,6 +20,7 @@ use Symfony\Component\Form\Exception\OutOfBoundsException;
 use Symfony\Component\Form\Util\FormUtil;
 use Symfony\Component\Form\Util\InheritDataAwareIterator;
 use Symfony\Component\Form\Util\OrderedHashMap;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PropertyAccess\PropertyPath;
 
 /**
@@ -61,72 +62,81 @@ use Symfony\Component\PropertyAccess\PropertyPath;
 class Form implements \IteratorAggregate, FormInterface
 {
     /**
-     * The form's configuration
+     * The form's configuration.
+     *
      * @var FormConfigInterface
      */
     private $config;
 
     /**
-     * The parent of this form
+     * The parent of this form.
+     *
      * @var FormInterface
      */
     private $parent;
 
     /**
-     * The children of this form
+     * The children of this form.
+     *
      * @var FormInterface[] A map of FormInterface instances
      */
     private $children;
 
     /**
-     * The errors of this form
+     * The errors of this form.
+     *
      * @var FormError[] An array of FormError instances
      */
     private $errors = array();
 
     /**
-     * Whether this form was submitted
+     * Whether this form was submitted.
+     *
      * @var bool
      */
     private $submitted = false;
 
     /**
-     * The button that was used to submit the form
+     * The button that was used to submit the form.
+     *
      * @var Button
      */
     private $clickedButton;
 
     /**
-     * The form data in model format
+     * The form data in model format.
+     *
      * @var mixed
      */
     private $modelData;
 
     /**
-     * The form data in normalized format
+     * The form data in normalized format.
+     *
      * @var mixed
      */
     private $normData;
 
     /**
-     * The form data in view format
+     * The form data in view format.
+     *
      * @var mixed
      */
     private $viewData;
 
     /**
-     * The submitted values that don't belong to any children
+     * The submitted values that don't belong to any children.
+     *
      * @var array
      */
     private $extraData = array();
 
     /**
-     * Whether the data in model, normalized and view format is
-     * synchronized. Data may not be synchronized if transformation errors
-     * occur.
-     * @var bool
+     * Returns the transformation failure generated during submission, if any.
+     *
+     * @var TransformationFailedException|null
      */
-    private $synchronized = true;
+    private $transformationFailure;
 
     /**
      * Whether the form's data has been initialized.
@@ -144,6 +154,7 @@ class Form implements \IteratorAggregate, FormInterface
 
     /**
      * Whether setData() is currently being called.
+     *
      * @var bool
      */
     private $lockSetData = false;
@@ -151,7 +162,7 @@ class Form implements \IteratorAggregate, FormInterface
     /**
      * Creates a new form based on the given configuration.
      *
-     * @param FormConfigInterface $config The form configuration.
+     * @param FormConfigInterface $config The form configuration
      *
      * @throws LogicException if a data mapper is not provided for a compound form
      */
@@ -345,26 +356,16 @@ class Form implements \IteratorAggregate, FormInterface
         if (!FormUtil::isEmpty($viewData)) {
             $dataClass = $this->config->getDataClass();
 
-            $actualType = is_object($viewData) ? 'an instance of class '.get_class($viewData) : ' a(n) '.gettype($viewData);
-
-            if (null === $dataClass && is_object($viewData) && !$viewData instanceof \ArrayAccess) {
-                $expectedType = 'scalar, array or an instance of \ArrayAccess';
-
-                throw new LogicException(
-                    'The form\'s view data is expected to be of type '.$expectedType.', ' .
-                    'but is '.$actualType.'. You ' .
-                    'can avoid this error by setting the "data_class" option to ' .
-                    '"'.get_class($viewData).'" or by adding a view transformer ' .
-                    'that transforms '.$actualType.' to '.$expectedType.'.'
-                );
-            }
-
             if (null !== $dataClass && !$viewData instanceof $dataClass) {
+                $actualType = is_object($viewData)
+                    ? 'an instance of class '.get_class($viewData)
+                    : 'a(n) '.gettype($viewData);
+
                 throw new LogicException(
-                    'The form\'s view data is expected to be an instance of class ' .
-                    $dataClass.', but is '. $actualType.'. You can avoid this error ' .
-                    'by setting the "data_class" option to null or by adding a view ' .
-                    'transformer that transforms '.$actualType.' to an instance of ' .
+                    'The form\'s view data is expected to be an instance of class '.
+                    $dataClass.', but is '.$actualType.'. You can avoid this error '.
+                    'by setting the "data_class" option to null or by adding a view '.
+                    'transformer that transforms '.$actualType.' to an instance of '.
                     $dataClass.'.'
                 );
             }
@@ -495,6 +496,10 @@ class Form implements \IteratorAggregate, FormInterface
      */
     public function submit($submittedData, $clearMissing = true)
     {
+        if ($submittedData instanceof Request) {
+            @trigger_error('Passing a Symfony\Component\HttpFoundation\Request object to the '.__CLASS__.'::bind and '.__METHOD__.' methods is deprecated since 2.3 and will be removed in 3.0. Use the '.__CLASS__.'::handleRequest method instead. If you want to test whether the form was submitted separately, you can use the '.__CLASS__.'::isSubmitted method.', E_USER_DEPRECATED);
+        }
+
         if ($this->submitted) {
             throw new AlreadySubmittedException('A form can only be submitted once');
         }
@@ -634,7 +639,7 @@ class Form implements \IteratorAggregate, FormInterface
                 $viewData = $this->normToView($normData);
             }
         } catch (TransformationFailedException $e) {
-            $this->synchronized = false;
+            $this->transformationFailure = $e;
 
             // If $viewData was not yet set, set it to $submittedData so that
             // the erroneous data is accessible on the form.
@@ -661,11 +666,17 @@ class Form implements \IteratorAggregate, FormInterface
     /**
      * Alias of {@link submit()}.
      *
-     * @deprecated Deprecated since version 2.3, to be removed in 3.0. Use
-     *             {@link submit()} instead.
+     * @deprecated since version 2.3, to be removed in 3.0.
+     *             Use {@link submit()} instead.
      */
     public function bind($submittedData)
     {
+        // This method is deprecated for Request too, but the error is
+        // triggered in Form::submit() method.
+        if (!$submittedData instanceof Request) {
+            @trigger_error('The '.__METHOD__.' method is deprecated since version 2.3 and will be removed in 3.0. Use the '.__CLASS__.'::submit method instead.', E_USER_DEPRECATED);
+        }
+
         return $this->submit($submittedData);
     }
 
@@ -674,11 +685,11 @@ class Form implements \IteratorAggregate, FormInterface
      */
     public function addError(FormError $error)
     {
-        if ($this->parent && $this->config->getErrorBubbling()) {
-            if (null === $error->getOrigin()) {
-                $error->setOrigin($this);
-            }
+        if (null === $error->getOrigin()) {
+            $error->setOrigin($this);
+        }
 
+        if ($this->parent && $this->config->getErrorBubbling()) {
             $this->parent->addError($error);
         } else {
             $this->errors[] = $error;
@@ -698,11 +709,13 @@ class Form implements \IteratorAggregate, FormInterface
     /**
      * Alias of {@link isSubmitted()}.
      *
-     * @deprecated Deprecated since version 2.3, to be removed in 3.0. Use
-     *             {@link isSubmitted()} instead.
+     * @deprecated since version 2.3, to be removed in 3.0.
+     *             Use {@link isSubmitted()} instead.
      */
     public function isBound()
     {
+        @trigger_error('The '.__METHOD__.' method is deprecated since version 2.3 and will be removed in 3.0. Use the '.__CLASS__.'::isSubmitted method instead.', E_USER_DEPRECATED);
+
         return $this->submitted;
     }
 
@@ -711,7 +724,15 @@ class Form implements \IteratorAggregate, FormInterface
      */
     public function isSynchronized()
     {
-        return $this->synchronized;
+        return null === $this->transformationFailure;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTransformationFailure()
+    {
+        return $this->transformationFailure;
     }
 
     /**
@@ -727,7 +748,7 @@ class Form implements \IteratorAggregate, FormInterface
 
         return FormUtil::isEmpty($this->modelData) ||
             // arrays, countables
-            0 === count($this->modelData) ||
+            ((is_array($this->modelData) || $this->modelData instanceof \Countable) && 0 === count($this->modelData)) ||
             // traversables that are not countable
             ($this->modelData instanceof \Traversable && 0 === iterator_count($this->modelData));
     }
@@ -745,11 +766,7 @@ class Form implements \IteratorAggregate, FormInterface
             return true;
         }
 
-        if (count($this->getErrors(true)) > 0) {
-            return false;
-        }
-
-        return true;
+        return 0 === count($this->getErrors(true));
     }
 
     /**
@@ -808,15 +825,17 @@ class Form implements \IteratorAggregate, FormInterface
      *
      * This method should only be used to help debug a form.
      *
-     * @param int     $level The indentation level (used internally)
+     * @param int $level The indentation level (used internally)
      *
      * @return string A string representation of all errors
      *
-     * @deprecated Deprecated since version 2.5, to be removed in 3.0. Use
-     *             {@link getErrors()} instead and cast the result to a string.
+     * @deprecated since version 2.5, to be removed in 3.0.
+     *             Use {@link getErrors()} instead and cast the result to a string.
      */
     public function getErrorsAsString($level = 0)
     {
+        @trigger_error('The '.__METHOD__.' method is deprecated since version 2.5 and will be removed in 3.0. Use (string) Form::getErrors(true, false) instead.', E_USER_DEPRECATED);
+
         return self::indent((string) $this->getErrors(true, false), $level);
     }
 
@@ -876,6 +895,10 @@ class Form implements \IteratorAggregate, FormInterface
             // Never initialize child forms automatically
             $options['auto_initialize'] = false;
 
+            if (null === $type && null === $this->config->getDataClass()) {
+                $type = 'Symfony\Component\Form\Extension\Core\Type\TextType';
+            }
+
             if (null === $type) {
                 $child = $this->config->getFormFactory()->createForProperty($this->config->getDataClass(), $child, null, $options);
             } else {
@@ -894,7 +917,7 @@ class Form implements \IteratorAggregate, FormInterface
         $child->setParent($this);
 
         if (!$this->lockSetData && $this->defaultDataSet && !$this->config->getInheritData()) {
-            $iterator = new InheritDataAwareIterator(new \ArrayIterator(array($child)));
+            $iterator = new InheritDataAwareIterator(new \ArrayIterator(array($child->getName() => $child)));
             $iterator = new \RecursiveIteratorIterator($iterator);
             $this->config->getDataMapper()->mapDataToForms($viewData, $iterator);
         }
@@ -971,8 +994,8 @@ class Form implements \IteratorAggregate, FormInterface
     /**
      * Adds a child to the form (implements the \ArrayAccess interface).
      *
-     * @param string        $name  Ignored. The name of the child is used.
-     * @param FormInterface $child The child to be added.
+     * @param string        $name  Ignored. The name of the child is used
+     * @param FormInterface $child The child to be added
      *
      * @throws AlreadySubmittedException If the form has already been submitted.
      * @throws LogicException            When trying to add a child to a non-compound form.
@@ -999,7 +1022,7 @@ class Form implements \IteratorAggregate, FormInterface
     /**
      * Returns the iterator for this group.
      *
-     * @return \Traversable
+     * @return \Traversable|FormInterface[]
      */
     public function getIterator()
     {
@@ -1009,7 +1032,7 @@ class Form implements \IteratorAggregate, FormInterface
     /**
      * Returns the number of form children (implements the \Countable interface).
      *
-     * @return int     The number of embedded form children
+     * @return int The number of embedded form children
      */
     public function count()
     {
@@ -1050,11 +1073,21 @@ class Form implements \IteratorAggregate, FormInterface
      * @param mixed $value The value to transform
      *
      * @return mixed
+     *
+     * @throws TransformationFailedException If the value cannot be transformed to "normalized" format
      */
     private function modelToNorm($value)
     {
-        foreach ($this->config->getModelTransformers() as $transformer) {
-            $value = $transformer->transform($value);
+        try {
+            foreach ($this->config->getModelTransformers() as $transformer) {
+                $value = $transformer->transform($value);
+            }
+        } catch (TransformationFailedException $exception) {
+            throw new TransformationFailedException(
+                'Unable to transform value for property path "'.$this->getPropertyPath().'": '.$exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
         }
 
         return $value;
@@ -1066,13 +1099,23 @@ class Form implements \IteratorAggregate, FormInterface
      * @param string $value The value to reverse transform
      *
      * @return mixed
+     *
+     * @throws TransformationFailedException If the value cannot be transformed to "model" format
      */
     private function normToModel($value)
     {
-        $transformers = $this->config->getModelTransformers();
+        try {
+            $transformers = $this->config->getModelTransformers();
 
-        for ($i = count($transformers) - 1; $i >= 0; --$i) {
-            $value = $transformers[$i]->reverseTransform($value);
+            for ($i = count($transformers) - 1; $i >= 0; --$i) {
+                $value = $transformers[$i]->reverseTransform($value);
+            }
+        } catch (TransformationFailedException $exception) {
+            throw new TransformationFailedException(
+                'Unable to reverse value for property path "'.$this->getPropertyPath().'": '.$exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
         }
 
         return $value;
@@ -1084,6 +1127,8 @@ class Form implements \IteratorAggregate, FormInterface
      * @param mixed $value The value to transform
      *
      * @return mixed
+     *
+     * @throws TransformationFailedException If the value cannot be transformed to "view" format
      */
     private function normToView($value)
     {
@@ -1096,8 +1141,16 @@ class Form implements \IteratorAggregate, FormInterface
             return null === $value || is_scalar($value) ? (string) $value : $value;
         }
 
-        foreach ($this->config->getViewTransformers() as $transformer) {
-            $value = $transformer->transform($value);
+        try {
+            foreach ($this->config->getViewTransformers() as $transformer) {
+                $value = $transformer->transform($value);
+            }
+        } catch (TransformationFailedException $exception) {
+            throw new TransformationFailedException(
+                'Unable to transform value for property path "'.$this->getPropertyPath().'": '.$exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
         }
 
         return $value;
@@ -1109,6 +1162,8 @@ class Form implements \IteratorAggregate, FormInterface
      * @param string $value The value to reverse transform
      *
      * @return mixed
+     *
+     * @throws TransformationFailedException If the value cannot be transformed to "normalized" format
      */
     private function viewToNorm($value)
     {
@@ -1118,8 +1173,16 @@ class Form implements \IteratorAggregate, FormInterface
             return '' === $value ? null : $value;
         }
 
-        for ($i = count($transformers) - 1; $i >= 0; --$i) {
-            $value = $transformers[$i]->reverseTransform($value);
+        try {
+            for ($i = count($transformers) - 1; $i >= 0; --$i) {
+                $value = $transformers[$i]->reverseTransform($value);
+            }
+        } catch (TransformationFailedException $exception) {
+            throw new TransformationFailedException(
+                'Unable to reverse value for property path "'.$this->getPropertyPath().'": '.$exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
         }
 
         return $value;
@@ -1128,8 +1191,8 @@ class Form implements \IteratorAggregate, FormInterface
     /**
      * Utility function for indenting multi-line strings.
      *
-     * @param string  $string The string
-     * @param int     $level  The number of spaces to use for indentation
+     * @param string $string The string
+     * @param int    $level  The number of spaces to use for indentation
      *
      * @return string The indented string
      */

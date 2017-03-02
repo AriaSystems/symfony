@@ -12,6 +12,7 @@
 namespace Symfony\Component\Validator\Violation;
 
 use Symfony\Component\Translation\TranslatorInterface;
+use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Util\PropertyPath;
@@ -19,7 +20,6 @@ use Symfony\Component\Validator\Util\PropertyPath;
 /**
  * Default implementation of {@link ConstraintViolationBuilderInterface}.
  *
- * @since  2.5
  * @author Bernhard Schussek <bschussek@gmail.com>
  *
  * @internal You should not instantiate or use this class. Code against
@@ -73,11 +73,21 @@ class ConstraintViolationBuilder implements ConstraintViolationBuilderInterface
     private $plural;
 
     /**
+     * @var Constraint
+     */
+    private $constraint;
+
+    /**
      * @var mixed
      */
     private $code;
 
-    public function __construct(ConstraintViolationList $violations, $message, array $parameters, $root, $propertyPath, $invalidValue, TranslatorInterface $translator, $translationDomain = null)
+    /**
+     * @var mixed
+     */
+    private $cause;
+
+    public function __construct(ConstraintViolationList $violations, Constraint $constraint, $message, array $parameters, $root, $propertyPath, $invalidValue, TranslatorInterface $translator, $translationDomain = null)
     {
         $this->violations = $violations;
         $this->message = $message;
@@ -87,6 +97,7 @@ class ConstraintViolationBuilder implements ConstraintViolationBuilderInterface
         $this->invalidValue = $invalidValue;
         $this->translator = $translator;
         $this->translationDomain = $translationDomain;
+        $this->constraint = $constraint;
     }
 
     /**
@@ -162,6 +173,16 @@ class ConstraintViolationBuilder implements ConstraintViolationBuilderInterface
     /**
      * {@inheritdoc}
      */
+    public function setCause($cause)
+    {
+        $this->cause = $cause;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function addViolation()
     {
         if (null === $this->plural) {
@@ -176,7 +197,7 @@ class ConstraintViolationBuilder implements ConstraintViolationBuilderInterface
                     $this->message,
                     $this->plural,
                     $this->parameters,
-                    $this->translationDomain#
+                    $this->translationDomain
                 );
             } catch (\InvalidArgumentException $e) {
                 $translatedMessage = $this->translator->trans(
@@ -195,7 +216,9 @@ class ConstraintViolationBuilder implements ConstraintViolationBuilderInterface
             $this->propertyPath,
             $this->invalidValue,
             $this->plural,
-            $this->code
+            $this->code,
+            $this->constraint,
+            $this->cause
         ));
     }
 }

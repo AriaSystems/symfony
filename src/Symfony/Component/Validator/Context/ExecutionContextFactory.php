@@ -17,7 +17,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 /**
  * Creates new {@link ExecutionContext} instances.
  *
- * @since  2.5
  * @author Bernhard Schussek <bschussek@gmail.com>
  *
  * @internal You should not instantiate or use this class. Code against
@@ -38,10 +37,10 @@ class ExecutionContextFactory implements ExecutionContextFactoryInterface
     /**
      * Creates a new context factory.
      *
-     * @param TranslatorInterface   $translator        The translator
-     * @param string|null           $translationDomain The translation domain to
-     *                                                 use for translating
-     *                                                 violation messages
+     * @param TranslatorInterface $translator        The translator
+     * @param string|null         $translationDomain The translation domain to
+     *                                               use for translating
+     *                                               violation messages
      */
     public function __construct(TranslatorInterface $translator, $translationDomain = null)
     {

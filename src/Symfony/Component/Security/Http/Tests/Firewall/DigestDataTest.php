@@ -11,16 +11,17 @@
 
 namespace Symfony\Component\Security\Http\Tests\Firewall;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Http\Firewall\DigestData;
 
-class DigestDataTest extends \PHPUnit_Framework_TestCase
+class DigestDataTest extends TestCase
 {
     public function testGetResponse()
     {
         $digestAuth = new DigestData(
-            'username="user", realm="Welcome, robot!", ' .
-            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="user", realm="Welcome, robot!", '.
+            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -30,9 +31,9 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
     public function testGetUsername()
     {
         $digestAuth = new DigestData(
-            'username="user", realm="Welcome, robot!", ' .
-            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="user", realm="Welcome, robot!", '.
+            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -42,9 +43,9 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
     public function testGetUsernameWithQuote()
     {
         $digestAuth = new DigestData(
-            'username="\"user\"", realm="Welcome, robot!", ' .
-            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="\"user\"", realm="Welcome, robot!", '.
+            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -54,9 +55,9 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
     public function testGetUsernameWithQuoteAndEscape()
     {
         $digestAuth = new DigestData(
-            'username="\"u\\\\\"ser\"", realm="Welcome, robot!", ' .
-            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="\"u\\\\\"ser\"", realm="Welcome, robot!", '.
+            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -66,9 +67,9 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
     public function testGetUsernameWithSingleQuote()
     {
         $digestAuth = new DigestData(
-            'username="\"u\'ser\"", realm="Welcome, robot!", ' .
-            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="\"u\'ser\"", realm="Welcome, robot!", '.
+            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -78,9 +79,9 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
     public function testGetUsernameWithSingleQuoteAndEscape()
     {
         $digestAuth = new DigestData(
-            'username="\"u\\\'ser\"", realm="Welcome, robot!", ' .
-            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="\"u\\\'ser\"", realm="Welcome, robot!", '.
+            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -90,9 +91,9 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
     public function testGetUsernameWithEscape()
     {
         $digestAuth = new DigestData(
-            'username="\"u\\ser\"", realm="Welcome, robot!", ' .
-            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="\"u\\ser\"", realm="Welcome, robot!", '.
+            'nonce="MTM0NzMyMTgyMy42NzkzOmRlZjM4NmIzOGNjMjE0OWJiNDU0MDAxNzJmYmM1MmZl", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -106,8 +107,8 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
         $nonce = base64_encode($time.':'.md5($time.':'.$key));
 
         $digestAuth = new DigestData(
-            'username="user", realm="Welcome, robot!", nonce="'.$nonce.'", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="user", realm="Welcome, robot!", nonce="'.$nonce.'", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 
@@ -146,8 +147,8 @@ class DigestDataTest extends \PHPUnit_Framework_TestCase
         $nonce = base64_encode($time.':'.md5($time.':'.$key));
 
         $digestAuth = new DigestData(
-            'username="user", realm="Welcome, robot!", nonce="'.$nonce.'", ' .
-            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", ' .
+            'username="user", realm="Welcome, robot!", nonce="'.$nonce.'", '.
+            'uri="/path/info?p1=5&p2=5", cnonce="MDIwODkz", nc=00000001, qop="auth", '.
             'response="b52938fc9e6d7c01be7702ece9031b42"'
         );
 

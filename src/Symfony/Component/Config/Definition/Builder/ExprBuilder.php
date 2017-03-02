@@ -26,7 +26,7 @@ class ExprBuilder
     public $thenPart;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param NodeDefinition $node The related node
      */
@@ -40,7 +40,7 @@ class ExprBuilder
      *
      * @param \Closure $then
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function always(\Closure $then = null)
     {
@@ -60,7 +60,7 @@ class ExprBuilder
      *
      * @param \Closure $closure
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function ifTrue(\Closure $closure = null)
     {
@@ -76,7 +76,7 @@ class ExprBuilder
     /**
      * Tests if the value is a string.
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function ifString()
     {
@@ -88,7 +88,7 @@ class ExprBuilder
     /**
      * Tests if the value is null.
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function ifNull()
     {
@@ -100,7 +100,7 @@ class ExprBuilder
     /**
      * Tests if the value is an array.
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function ifArray()
     {
@@ -114,7 +114,7 @@ class ExprBuilder
      *
      * @param array $array
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function ifInArray(array $array)
     {
@@ -128,7 +128,7 @@ class ExprBuilder
      *
      * @param array $array
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function ifNotInArray(array $array)
     {
@@ -142,7 +142,7 @@ class ExprBuilder
      *
      * @param \Closure $closure
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function then(\Closure $closure)
     {
@@ -154,7 +154,7 @@ class ExprBuilder
     /**
      * Sets a closure returning an empty array.
      *
-     * @return ExprBuilder
+     * @return $this
      */
     public function thenEmptyArray()
     {
@@ -170,7 +170,7 @@ class ExprBuilder
      *
      * @param string $message
      *
-     * @return ExprBuilder
+     * @return $this
      *
      * @throws \InvalidArgumentException
      */
@@ -184,7 +184,7 @@ class ExprBuilder
     /**
      * Sets a closure unsetting this key of the array at validation time.
      *
-     * @return ExprBuilder
+     * @return $this
      *
      * @throws UnsetKeyException
      */
@@ -196,9 +196,9 @@ class ExprBuilder
     }
 
     /**
-     * Returns the related node
+     * Returns the related node.
      *
-     * @return NodeDefinition
+     * @return NodeDefinition|ArrayNodeDefinition|VariableNodeDefinition
      *
      * @throws \RuntimeException
      */
@@ -224,9 +224,11 @@ class ExprBuilder
     public static function buildExpressions(array $expressions)
     {
         foreach ($expressions as $k => $expr) {
-            if ($expr instanceof ExprBuilder) {
-                $expressions[$k] = function ($v) use ($expr) {
-                    return call_user_func($expr->ifPart, $v) ? call_user_func($expr->thenPart, $v) : $v;
+            if ($expr instanceof self) {
+                $if = $expr->ifPart;
+                $then = $expr->thenPart;
+                $expressions[$k] = function ($v) use ($if, $then) {
+                    return $if($v) ? $then($v) : $v;
                 };
             }
         }
